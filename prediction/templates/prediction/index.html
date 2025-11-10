@@ -1,0 +1,280 @@
+{% extends 'prediction/base.html' %}
+
+{% block content %}
+<header>
+    <h1>❤️ Heart Disease Risk Assessment</h1>
+    <p class="subtitle">Team SKF</p>
+</header>
+
+<p class="description">Provide your health details below to assess your heart disease risk</p>
+
+{% if not model_loaded %}
+<div class="alert alert-error">
+    ⚠️ Warning: Prediction model is not loaded. Please check if model files are available.
+</div>
+{% endif %}
+
+<form id="prediction-form" method="post" action="{% url 'predict' %}">
+    {% csrf_token %}
+    <div class="form-container">
+        <div class="form-section">
+            <div class="section-title">
+                <i>👤</i> Personal Information
+            </div>
+            
+            <div class="form-group">
+                <label for="age">Age</label>
+                <div class="slider-container">
+                    <input type="range" id="age" name="age" min="18" max="100" value="40" class="slider">
+                    <span class="slider-value" id="age-value">40</span>
+                </div>
+                <div class="help-text">Select your current age</div>
+            </div>
+
+            <div class="form-group">
+                <label for="sex">Sex</label>
+                <select id="sex" name="sex">
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                </select>
+                <div class="help-text">Select your biological sex</div>
+            </div>
+            
+            <div class="section-title">
+                <i>📊</i> Blood & Heart Metrics
+            </div>
+            
+            <div class="form-group">
+                <label for="resting_bp">Resting Blood Pressure (mm Hg)</label>
+                <input type="number" id="resting_bp" name="resting_bp" min="80" max="200" value="120">
+                <div class="help-text">Your resting blood pressure measurement</div>
+            </div>
+
+            <div class="form-group">
+                <label for="cholesterol">Cholesterol (mg/dL)</label>
+                <input type="number" id="cholesterol" name="cholesterol" min="100" max="600" value="200">
+                <div class="help-text">Your cholesterol level</div>
+            </div>
+
+            <div class="form-group">
+                <label for="max_hr">Max Heart Rate</label>
+                <div class="slider-container">
+                    <input type="range" id="max_hr" name="max_hr" min="60" max="220" value="150" class="slider">
+                    <span class="slider-value" id="max_hr-value">150</span>
+                </div>
+                <div class="help-text">Maximum heart rate achieved</div>
+            </div>
+
+            <div class="form-group">
+                <label for="oldpeak">Oldpeak (ST Depression)</label>
+                <div class="slider-container">
+                    <input type="range" id="oldpeak" name="oldpeak" min="0" max="60" value="10" class="slider" step="1">
+                    <span class="slider-value" id="oldpeak-value">1.0</span>
+                </div>
+                <div class="help-text">ST depression induced by exercise relative to rest</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">
+                <i>💓</i> Heart Symptoms
+            </div>
+            
+            <div class="form-group">
+                <label for="chest_pain">Chest Pain Type</label>
+                <select id="chest_pain" name="chest_pain">
+                    <option value="ATA">ATA</option>
+                    <option value="NAP">NAP</option>
+                    <option value="TA">TA</option>
+                    <option value="ASY" selected>ASY</option>
+                </select>
+                <div class="help-text">Type of chest pain experienced</div>
+            </div>
+
+            <div class="form-group">
+                <label for="resting_ecg">Resting ECG</label>
+                <select id="resting_ecg" name="resting_ecg">
+                    <option value="Normal" selected>Normal</option>
+                    <option value="ST">ST</option>
+                    <option value="LVH">LVH</option>
+                </select>
+                <div class="help-text">Resting electrocardiogram results</div>
+            </div>
+
+            <div class="form-group">
+                <label for="exercise_angina">Exercise-Induced Angina</label>
+                <select id="exercise_angina" name="exercise_angina">
+                    <option value="N" selected>No</option>
+                    <option value="Y">Yes</option>
+                </select>
+                <div class="help-text">Chest pain during exercise?</div>
+            </div>
+
+            <div class="form-group">
+                <label for="st_slope">ST Slope</label>
+                <select id="st_slope" name="st_slope">
+                    <option value="Up" selected>Up</option>
+                    <option value="Flat">Flat</option>
+                    <option value="Down">Down</option>
+                </select>
+                <div class="help-text">Slope of peak exercise ST segment</div>
+            </div>
+            
+            <div class="section-title">
+                <i>🩸</i> Blood Sugar
+            </div>
+            
+            <div class="form-group">
+                <label for="fasting_bs">Fasting Blood Sugar > 120 mg/dL</label>
+                <select id="fasting_bs" name="fasting_bs">
+                    <option value="0" selected>No</option>
+                    <option value="1">Yes</option>
+                </select>
+                <div class="help-text">Fasting blood sugar level (No = 0, Yes = 1)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button type="submit" class="predict-btn" id="predict-btn" {% if not model_loaded %}disabled{% endif %}>
+            <i>🔍</i> Analyze Heart Risk
+        </button>
+    </div>
+</form>
+
+<div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Analyzing your health data with ML model...</p>
+</div>
+
+<div class="result-container" id="result-container">
+    <!-- Results will be inserted here -->
+</div>
+
+<footer>
+    <p><i>Note: This prediction is for informational purposes only. Always consult healthcare professionals for medical advice.</i></p>
+    <p><small>Powered by KNN Machine Learning Model</small></p>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Update slider values in real-time
+    document.querySelectorAll('.slider').forEach(slider => {
+        const valueElement = document.getElementById(slider.id + '-value');
+        
+        // For oldpeak, we need to divide by 10 to get decimal values
+        if (slider.id === 'oldpeak') {
+            valueElement.textContent = (slider.value / 10).toFixed(1);
+        } else {
+            valueElement.textContent = slider.value;
+        }
+        
+        slider.addEventListener('input', function() {
+            if (this.id === 'oldpeak') {
+                valueElement.textContent = (this.value / 10).toFixed(1);
+            } else {
+                valueElement.textContent = this.value;
+            }
+        });
+    });
+
+    // Handle form submission
+    document.getElementById('prediction-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading spinner
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('result-container').style.display = 'none';
+        
+        // Get form data
+        const formData = new FormData(this);
+        
+        // Send AJAX request
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading spinner
+            document.getElementById('loading').style.display = 'none';
+            
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            // Display results with probability
+            displayResults(data.prediction, data.risk_probability, data.prediction_id);
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            alert('An error occurred: ' + error);
+        });
+    });
+
+    // Display results with probability
+    function displayResults(prediction, riskProbability, predictionId) {
+        const resultContainer = document.getElementById('result-container');
+        
+        let resultHTML = '';
+        
+        if (prediction === 1) {
+            resultHTML = `
+                <div class="risk-high">
+                    <h2 class="result-title">⚠️ High Risk of Heart Disease</h2>
+                    <p>Risk Probability: <strong>${riskProbability}%</strong></p>
+                    <p>Please consult with a healthcare professional for proper evaluation and guidance.</p>
+                </div>
+                <details class="expandable">
+                    <summary>🔍 What to do next?</summary>
+                    <ul>
+                        <li><strong>Consult a doctor</strong> immediately</li>
+                        <li><strong>Monitor your symptoms</strong> regularly</li>
+                        <li><strong>Maintain a healthy lifestyle</strong></li>
+                        <li><strong>Follow up</strong> with recommended tests</li>
+                    </ul>
+                </details>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="/result/${predictionId}/" class="predict-btn" style="text-decoration: none; display: inline-flex;">
+                        <i>📋</i> View Detailed Report
+                    </a>
+                </div>
+            `;
+        } else {
+            resultHTML = `
+                <div class="risk-low">
+                    <h2 class="result-title">✅ Low Risk of Heart Disease</h2>
+                    <p>Risk Probability: <strong>${riskProbability}%</strong></p>
+                    <p>Continue maintaining a healthy lifestyle with regular checkups.</p>
+                </div>
+                <details class="expandable">
+                    <summary>💡 Tips for maintaining heart health</summary>
+                    <ul>
+                        <li><strong>Regular exercise</strong> (30 minutes daily)</li>
+                        <li><strong>Balanced diet</strong> with fruits and vegetables</li>
+                        <li><strong>Regular health checkups</strong></li>
+                        <li><strong>Avoid smoking</strong> and limit alcohol</li>
+                        <li><strong>Manage stress</strong> through meditation or hobbies</li>
+                    </ul>
+                </details>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="/result/${predictionId}/" class="predict-btn" style="text-decoration: none; display: inline-flex;">
+                        <i>📋</i> View Detailed Report
+                    </a>
+                </div>
+            `;
+        }
+        
+        resultContainer.innerHTML = resultHTML;
+        resultContainer.style.display = 'block';
+        
+        // Scroll to results
+        resultContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

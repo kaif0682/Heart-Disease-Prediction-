@@ -1,0 +1,71 @@
+{% extends 'prediction/base.html' %}
+
+{% block title %}Prediction Result - Heart Disease Risk Assessment{% endblock %}
+
+{% block content %}
+<header>
+    <h1>❤️ Prediction Result</h1>
+    <p class="subtitle">Team SKF</p>
+</header>
+
+<div class="button-container">
+    <a href="{% url 'index' %}" class="predict-btn" style="text-decoration: none;">
+        <i>↩️</i> Back to Assessment
+    </a>
+</div>
+
+{% if prediction.prediction_result == 1 %}
+<div class="risk-high">
+    <h2 class="result-title">⚠️ High Risk of Heart Disease</h2>
+    <p>Please consult with a healthcare professional for proper evaluation and guidance.</p>
+</div>
+<details class="expandable">
+    <summary>🔍 What to do next?</summary>
+    <ul>
+        <li><strong>Consult a doctor</strong> immediately</li>
+        <li><strong>Monitor your symptoms</strong> regularly</li>
+        <li><strong>Maintain a healthy lifestyle</strong></li>
+        <li><strong>Follow up</strong> with recommended tests</li>
+    </ul>
+</details>
+{% else %}
+<div class="risk-low">
+    <h2 class="result-title">✅ Low Risk of Heart Disease</h2>
+    <p>Continue maintaining a healthy lifestyle with regular checkups.</p>
+</div>
+<details class="expandable">
+    <summary>💡 Tips for maintaining heart health</summary>
+    <ul>
+        <li><strong>Regular exercise</strong> (30 minutes daily)</li>
+        <li><strong>Balanced diet</strong> with fruits and vegetables</li>
+        <li><strong>Regular health checkups</strong></li>
+        <li><strong>Avoid smoking</strong> and limit alcohol</li>
+        <li><strong>Manage stress</strong> through meditation or hobbies</li>
+    </ul>
+</details>
+{% endif %}
+
+<div class="form-section" style="margin-top: 2rem;">
+    <h3>Your Input Details</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem;">
+        <div><strong>Age:</strong> {{ prediction.age }}</div>
+        <div><strong>Sex:</strong> {{ prediction.get_sex_display }}</div>
+        <div><strong>Chest Pain Type:</strong> {{ prediction.chest_pain_type }}</div>
+        <div><strong>Resting BP:</strong> {{ prediction.resting_bp }} mm Hg</div>
+        <div><strong>Cholesterol:</strong> {{ prediction.cholesterol }} mg/dL</div>
+        <div><strong>Fasting BS:</strong> {{ prediction.get_fasting_bs_display }}</div>
+        <div><strong>Resting ECG:</strong> {{ prediction.resting_ecg }}</div>
+        <div><strong>Max HR:</strong> {{ prediction.max_hr }}</div>
+        <div><strong>Exercise Angina:</strong> {{ prediction.get_exercise_angina_display }}</div>
+        <div><strong>Oldpeak:</strong> {{ prediction.oldpeak }}</div>
+        <div><strong>ST Slope:</strong> {{ prediction.st_slope }}</div>
+        <div><strong>Risk Level:</strong> <span style="color: {% if prediction.prediction_result == 1 %}var(--primary){% else %}var(--secondary){% endif %}; font-weight: bold;">{{ prediction.get_risk_level }}</span></div>
+        <div><strong>Prediction Date:</strong> {{ prediction.created_at|date:"M d, Y H:i" }}</div>
+    </div>
+</div>
+
+<footer>
+    <p><i>Note: This prediction is for informational purposes only. Always consult healthcare professionals for medical advice.</i></p>
+    <p><small>Powered by KNN Machine Learning Model | Prediction ID: {{ prediction.id }}</small></p>
+</footer>
+{% endblock %}
