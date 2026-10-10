@@ -166,9 +166,6 @@ The model artifacts are loaded by `prediction/views.py` from the app directory:
 
 If an artifact is absent or cannot be loaded, the home page reports model unavailability and predictions cannot be made. The training notebook documents a workflow using scikit-learn's `KNeighborsClassifier` and `StandardScaler`; review it before retraining or replacing the artifacts.
 
-## Screenshots, demo, and license
-
-No screenshots, hosted demo, deployment link, or license file were found in the project. Add these details when they are available and confirmed.
 
 ## Production considerations
 
